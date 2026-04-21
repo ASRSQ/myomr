@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gabaritos Lado a Lado</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f4f4f9;
+    font-family: Arial, sans-serif;
+    padding: 40px;
+  }
+
+  /* Container que segura as duas folhas lado a lado */
+  .wrapper {
+    display: flex;
+    gap: 40px; /* Espaço entre as duas folhas */
+  }
+
+  /* Estrutura de cada folha individual */
+  .sheet {
+    position: relative;
+    background-color: #ffffff;
+    width: 420px;
+    padding: 70px 50px 60px 50px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  /* Marcadores Pretos nos Cantos */
+  .marker {
+    position: absolute;
+    width: 70px;
+    height: 70px;
+    border-color: #000;
+    border-style: solid;
+    border-width: 0;
+  }
+
+  .top-left {
+    top: 25px;
+    left: 25px;
+    border-top-width: 15px;
+    border-left-width: 15px;
+  }
+
+  .top-right {
+    top: 25px;
+    right: 25px;
+    border-top-width: 15px;
+    border-right-width: 15px;
+  }
+
+  .bottom-left {
+    bottom: 25px;
+    left: 25px;
+    border-bottom-width: 15px;
+    border-left-width: 15px;
+  }
+
+  .bottom-right {
+    bottom: 25px;
+    right: 25px;
+    border-bottom-width: 15px;
+    border-right-width: 15px;
+  }
+
+  /* Título de cada folha */
+  .title {
+    text-align: center;
+    font-size: 22px;
+    margin-bottom: 40px;
+    color: #000;
+  }
+
+  /* Container das questões */
+  .questions {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Espaçamento vertical entre as linhas */
+    align-items: center;
+  }
+
+  /* Linha de cada questão */
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 18px; /* Espaçamento entre as bolhas */
+  }
+
+  /* Número da questão (Q1, Q11...) */
+  .q-num {
+    font-size: 18px;
+    width: 45px; /* Largura fixa para manter todas as linhas perfeitamente alinhadas */
+    text-align: left;
+  }
+
+  /* Bolhas com as letras dentro */
+  .bubble {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 32px;
+    height: 32px;
+    border: 1.5px solid #000;
+    border-radius: 50%;
+    font-size: 16px;
+    background-color: transparent;
+  }
+</style>
+</head>
+<body>
+
+  <div class="wrapper">
+
+    <div class="sheet">
+      <div class="marker top-left"></div>
+      <div class="marker top-right"></div>
+      <div class="marker bottom-left"></div>
+      <div class="marker bottom-right"></div>
+
+      <div class="title">Answer Sheet</div>
+
+      <div class="questions">
+        <div class="row"><span class="q-num">Q1</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q2</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q3</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q4</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q5</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q6</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q7</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q8</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q9</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q10</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+      </div>
+    </div>
+
+    <div class="sheet">
+      <div class="marker top-left"></div>
+      <div class="marker top-right"></div>
+      <div class="marker bottom-left"></div>
+      <div class="marker bottom-right"></div>
+
+      <div class="title">Answer Sheet</div>
+
+      <div class="questions">
+        <div class="row"><span class="q-num">Q11</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q12</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q13</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q14</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q15</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q16</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q17</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q18</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q19</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+        <div class="row"><span class="q-num">Q20</span><div class="bubble">A</div><div class="bubble">B</div><div class="bubble">C</div><div class="bubble">D</div><div class="bubble">E</div></div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
