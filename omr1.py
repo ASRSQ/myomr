@@ -178,73 +178,78 @@ def detectar_bolhas(thresh):
 # LINHAS (UNIVERSAL)
 # =========================
 def agrupar_linhas(bolhas):
-    log("Agrupando bolhas em questões...")
-    if not bolhas: return []
 
-    # 1. Agrupar por altura (Y) para achar as linhas físicas do papel
+    log("Agrupando bolhas em questões...")
+
+    if not bolhas:
+        return []
+
+    # =========================
+    # 1. ORDENAR POR Y
+    # =========================
     bolhas = sorted(bolhas, key=lambda b: b[1])
-    linhas_fisicas = []
-    
+
+    linhas = []
+
+    TOLERANCIA_Y = 18
+
+    # =========================
+    # 2. AGRUPAR LINHAS REAIS
+    # =========================
     for b in bolhas:
+
+        x, y, w, h = b
+
         colocado = False
-        for linha in linhas_fisicas:
-            if abs(linha[0][1] - b[1]) < 15: # Tolerância Y para mesma linha
+
+        for linha in linhas:
+
+            media_y = np.mean([bb[1] for bb in linha])
+
+            if abs(media_y - y) < TOLERANCIA_Y:
                 linha.append(b)
                 colocado = True
                 break
+
         if not colocado:
-            linhas_fisicas.append([b])
+            linhas.append([b])
 
-    # 2. Separar as linhas físicas em blocos de questões isoladas
-    todas_questoes = []
+    # =========================
+    # 3. LIMPAR LINHAS
+    # =========================
+    linhas_validas = []
 
-    for linha in linhas_fisicas:
-        linha = sorted(linha, key=lambda b: b[0]) # Ordena da esquerda pra direita
-        questao_atual = [linha[0]]
-        
-        for i in range(1, len(linha)):
-            b_anterior = linha[i-1]
-            b_atual = linha[i]
-            
-            # Distância horizontal entre bolhas
-            dist_x = b_atual[0] - b_anterior[0]
-            largura_bolha = b_anterior[2]
-            
-            # Se a distância for muito grande, é pulo de coluna
-            if dist_x > largura_bolha * 3.5:
-                todas_questoes.append(questao_atual)
-                questao_atual = [b_atual]
-            else:
-                questao_atual.append(b_atual)
-                
-        todas_questoes.append(questao_atual)
+    for linha in linhas:
 
-    # 3. Agrupar as questões localizadas nas colunas gerais da prova
-    colunas_de_questoes = []
-    for q in todas_questoes:
-        x_medio = np.mean([b[0] for b in q])
-        colocado = False
-        for col in colunas_de_questoes:
-            # Tolerância para estar na mesma grande coluna
-            if abs(np.mean([b[0] for b in col[0]]) - x_medio) < 100:
-                col.append(q)
-                colocado = True
-                break
-        if not colocado:
-            colunas_de_questoes.append([q])
-            
-    # Ordena as colunas da esquerda para a direita
-    colunas_de_questoes = sorted(colunas_de_questoes, key=lambda c: np.mean([b[0] for b in c[0]]))
-    
-    linhas_finais = []
-    for idx, col in enumerate(colunas_de_questoes):
-        # Ordena as questões dentro da mesma coluna de cima para baixo
-        col = sorted(col, key=lambda q: np.mean([b[1] for b in q]))
-        linhas_finais.extend(col)
-        log(f"Bloco de Coluna {idx+1}: {len(col)} questões detectadas")
-        
-    log(f"Total de questões (linhas) prontas para ler: {len(linhas_finais)}")
-    return linhas_finais
+        linha = sorted(linha, key=lambda b: b[0])
+
+        # mantém apenas linhas com alternativas suficientes
+        if len(linha) >= 4:
+
+            # pega as 4 primeiras
+            linha = linha[:4]
+
+            linhas_validas.append(linha)
+
+    # =========================
+    # 4. ORDENAR:
+    # ESQUERDA -> DIREITA
+    # TOPO -> BAIXO
+    # =========================
+    linhas_validas = sorted(
+        linhas_validas,
+        key=lambda l: (
+            np.mean([b[0] for b in l]),
+            np.mean([b[1] for b in l])
+        )
+    )
+
+    # =========================
+    # DEBUG
+    # =========================
+    log(f"Total de questões detectadas: {len(linhas_validas)}")
+
+    return linhas_validas
 
 
 # =========================
