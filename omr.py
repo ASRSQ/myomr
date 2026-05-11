@@ -73,6 +73,7 @@ def detectar_bolhas(thresh):
 # AGRUPAR LINHAS (FIX ENEM)
 # =========================
 def agrupar_linhas(bolhas):
+    log("🔥 FUNÇÃO NOVA DE VERDADE 🔥")
 
     log("Agrupando bolhas em questões...")
 
