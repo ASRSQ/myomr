@@ -81,32 +81,31 @@ def agrupar_linhas(bolhas):
     # =========================
     bolhas = sorted(bolhas, key=lambda b: b[0])
 
-    xs = [b[0] for b in bolhas]
+    xs = sorted([b[0] for b in bolhas])
 
     # =========================
-    # DETECTAR COLUNAS AUTOMATICAMENTE
+    # DETECTAR SEPARAÇÕES GRANDES
     # =========================
-    xs_sorted = sorted(xs)
+    distancias = np.diff(xs)
 
-    distancias = np.diff(xs_sorted)
-
-    # separações grandes = nova coluna
-    THRESHOLD_COLUNA = 60
+    THRESHOLD_COLUNA = 70
 
     cortes = []
 
     for i, d in enumerate(distancias):
 
         if d > THRESHOLD_COLUNA:
-            cortes.append(xs_sorted[i])
+            cortes.append((xs[i] + xs[i+1]) / 2)
 
-    # limites das colunas
-    limites = [min(xs_sorted)]
+    # =========================
+    # LIMITAR ENTRE 1 E 4 COLUNAS
+    # =========================
+    limites = [0]
 
-    for c in cortes:
+    for c in cortes[:3]:
         limites.append(c)
 
-    limites.append(max(xs_sorted) + 1)
+    limites.append(99999)
 
     num_colunas = len(limites) - 1
 
@@ -115,7 +114,7 @@ def agrupar_linhas(bolhas):
     colunas = [[] for _ in range(num_colunas)]
 
     # =========================
-    # DISTRIBUIR BOLHAS NAS COLUNAS
+    # DISTRIBUIR NAS COLUNAS
     # =========================
     for b in bolhas:
 
