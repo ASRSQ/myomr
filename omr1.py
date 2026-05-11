@@ -229,12 +229,13 @@ def agrupar_linhas(bolhas):
 
             dist_x = atual[0] - anterior[0]
 
-            # separação entre colunas grandes
+            # distância entre alternativas da mesma questão
             if dist_x < 60:
                 grupo.append(atual)
 
             else:
 
+                # fechou uma questão
                 if len(grupo) >= 4:
                     questoes.append(grupo[:4])
 
@@ -253,18 +254,19 @@ def agrupar_linhas(bolhas):
 
     for q in questoes:
 
-        media_x = np.mean([b[0] for b in q])
+        # usa apenas o X da primeira bolha (A)
+        x_questao = q[0][0]
 
         colocado = False
 
         for coluna in colunas:
 
             media_coluna = np.mean([
-                np.mean([bb[0] for bb in qq])
+                qq[0][0]
                 for qq in coluna
             ])
 
-            if abs(media_coluna - media_x) < TOLERANCIA_X:
+            if abs(media_coluna - x_questao) < TOLERANCIA_X:
                 coluna.append(q)
                 colocado = True
                 break
@@ -273,18 +275,18 @@ def agrupar_linhas(bolhas):
             colunas.append([q])
 
     # =========================
-    # ORDENAR COLUNAS
+    # 4. ORDENAR COLUNAS
     # =========================
     colunas = sorted(
         colunas,
         key=lambda c: np.mean([
-            np.mean([b[0] for b in q])
+            q[0][0]
             for q in c
         ])
     )
 
     # =========================
-    # ORDENAR QUESTÕES DENTRO
+    # 5. ORDENAR QUESTÕES
     # =========================
     linhas_finais = []
 
@@ -305,7 +307,6 @@ def agrupar_linhas(bolhas):
     log(f"Total de questões detectadas: {len(linhas_finais)}")
 
     return linhas_finais
-
 
 # =========================
 # SCORE E ESCOLHA
