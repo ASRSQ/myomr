@@ -185,24 +185,21 @@ def agrupar_linhas(bolhas):
         return []
 
     # =========================
-    # 1. ORDENAR POR Y
+    # 1. AGRUPAR POR Y
     # =========================
     bolhas = sorted(bolhas, key=lambda b: b[1])
 
-    linhas = []
+    linhas_temp = []
 
-    TOLERANCIA_Y = 18
+    TOLERANCIA_Y = 15
 
-    # =========================
-    # 2. AGRUPAR LINHAS REAIS
-    # =========================
     for b in bolhas:
 
         x, y, w, h = b
 
         colocado = False
 
-        for linha in linhas:
+        for linha in linhas_temp:
 
             media_y = np.mean([bb[1] for bb in linha])
 
@@ -212,44 +209,53 @@ def agrupar_linhas(bolhas):
                 break
 
         if not colocado:
-            linhas.append([b])
+            linhas_temp.append([b])
 
     # =========================
-    # 3. LIMPAR LINHAS
+    # 2. QUEBRAR LINHAS GRANDES
     # =========================
-    linhas_validas = []
+    questoes = []
 
-    for linha in linhas:
+    for linha in linhas_temp:
 
         linha = sorted(linha, key=lambda b: b[0])
 
-        # mantém apenas linhas com alternativas suficientes
-        if len(linha) >= 4:
+        grupo = [linha[0]]
 
-            # pega as 4 primeiras
-            linha = linha[:4]
+        for i in range(1, len(linha)):
 
-            linhas_validas.append(linha)
+            anterior = linha[i - 1]
+            atual = linha[i]
+
+            dist_x = atual[0] - anterior[0]
+
+            # distância típica entre alternativas
+            if dist_x < 60:
+                grupo.append(atual)
+
+            else:
+                if len(grupo) >= 4:
+                    questoes.append(grupo[:4])
+
+                grupo = [atual]
+
+        if len(grupo) >= 4:
+            questoes.append(grupo[:4])
 
     # =========================
-    # 4. ORDENAR:
-    # ESQUERDA -> DIREITA
-    # TOPO -> BAIXO
+    # 3. ORDENAR QUESTÕES
     # =========================
-    linhas_validas = sorted(
-        linhas_validas,
-        key=lambda l: (
-            np.mean([b[0] for b in l]),
-            np.mean([b[1] for b in l])
+    questoes = sorted(
+        questoes,
+        key=lambda q: (
+            np.mean([b[0] for b in q]),
+            np.mean([b[1] for b in q])
         )
     )
 
-    # =========================
-    # DEBUG
-    # =========================
-    log(f"Total de questões detectadas: {len(linhas_validas)}")
+    log(f"Total de questões detectadas: {len(questoes)}")
 
-    return linhas_validas
+    return questoes
 
 
 # =========================
