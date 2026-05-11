@@ -81,7 +81,7 @@ def agrupar_linhas(bolhas):
 
     colunas = []
 
-    TOLERANCIA_X = 80
+    TOLERANCIA_X = 20
 
     # =========================
     # AGRUPAR COLUNAS
