@@ -229,33 +229,82 @@ def agrupar_linhas(bolhas):
 
             dist_x = atual[0] - anterior[0]
 
-            # distância típica entre alternativas
+            # separação entre colunas grandes
             if dist_x < 60:
                 grupo.append(atual)
 
             else:
+
                 if len(grupo) >= 4:
                     questoes.append(grupo[:4])
 
                 grupo = [atual]
 
+        # último grupo
         if len(grupo) >= 4:
             questoes.append(grupo[:4])
 
     # =========================
-    # 3. ORDENAR QUESTÕES
+    # 3. AGRUPAR EM GRANDES COLUNAS
     # =========================
-    questoes = sorted(
-        questoes,
-        key=lambda q: (
-            np.mean([b[0] for b in q]),
-            np.mean([b[1] for b in q])
-        )
+    colunas = []
+
+    TOLERANCIA_X = 120
+
+    for q in questoes:
+
+        media_x = np.mean([b[0] for b in q])
+
+        colocado = False
+
+        for coluna in colunas:
+
+            media_coluna = np.mean([
+                np.mean([bb[0] for bb in qq])
+                for qq in coluna
+            ])
+
+            if abs(media_coluna - media_x) < TOLERANCIA_X:
+                coluna.append(q)
+                colocado = True
+                break
+
+        if not colocado:
+            colunas.append([q])
+
+    # =========================
+    # ORDENAR COLUNAS
+    # =========================
+    colunas = sorted(
+        colunas,
+        key=lambda c: np.mean([
+            np.mean([b[0] for b in q])
+            for q in c
+        ])
     )
 
-    log(f"Total de questões detectadas: {len(questoes)}")
+    # =========================
+    # ORDENAR QUESTÕES DENTRO
+    # =========================
+    linhas_finais = []
 
-    return questoes
+    for idx, coluna in enumerate(colunas):
+
+        coluna = sorted(
+            coluna,
+            key=lambda q: np.mean([b[1] for b in q])
+        )
+
+        linhas_finais.extend(coluna)
+
+        log(f"Coluna {idx+1}: {len(coluna)} questões")
+
+    # =========================
+    # FINAL
+    # =========================
+    log(f"Total de questões detectadas: {len(linhas_finais)}")
+
+    return linhas_finais
 
 
 # =========================
