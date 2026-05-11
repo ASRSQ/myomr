@@ -74,52 +74,67 @@ def detectar_bolhas(thresh):
 # =========================
 def agrupar_linhas(bolhas):
 
-    log("Agrupando linhas...")
-
-    # ordenar por X
-    bolhas = sorted(bolhas, key=lambda b: b[0])
-
-    colunas = []
-
-    TOLERANCIA_X = 20
+    log("Agrupando bolhas em questões...")
 
     # =========================
-    # AGRUPAR COLUNAS
+    # ORDENAR POR X
+    # =========================
+    bolhas = sorted(bolhas, key=lambda b: b[0])
+
+    xs = [b[0] for b in bolhas]
+
+    # =========================
+    # DETECTAR COLUNAS AUTOMATICAMENTE
+    # =========================
+    xs_sorted = sorted(xs)
+
+    distancias = np.diff(xs_sorted)
+
+    # separações grandes = nova coluna
+    THRESHOLD_COLUNA = 60
+
+    cortes = []
+
+    for i, d in enumerate(distancias):
+
+        if d > THRESHOLD_COLUNA:
+            cortes.append(xs_sorted[i])
+
+    # limites das colunas
+    limites = [min(xs_sorted)]
+
+    for c in cortes:
+        limites.append(c)
+
+    limites.append(max(xs_sorted) + 1)
+
+    num_colunas = len(limites) - 1
+
+    log(f"Colunas detectadas: {num_colunas}")
+
+    colunas = [[] for _ in range(num_colunas)]
+
+    # =========================
+    # DISTRIBUIR BOLHAS NAS COLUNAS
     # =========================
     for b in bolhas:
 
         x, y, w, h = b
 
-        placed = False
+        for i in range(num_colunas):
 
-        for coluna in colunas:
-
-            media_x = np.mean([bb[0] for bb in coluna])
-
-            if abs(media_x - x) < TOLERANCIA_X:
-                coluna.append(b)
-                placed = True
+            if limites[i] <= x < limites[i + 1]:
+                colunas[i].append(b)
                 break
 
-        if not placed:
-            colunas.append([b])
-
-    # ordenar colunas esquerda -> direita
-    colunas = sorted(
-        colunas,
-        key=lambda c: np.mean([b[0] for b in c])
-    )
-
-    log(f"Colunas detectadas: {len(colunas)}")
-
     todas_linhas = []
-
-    TOLERANCIA_Y = 25
 
     # =========================
     # AGRUPAR LINHAS
     # =========================
-    for idx, coluna in enumerate(colunas):
+    TOLERANCIA_Y = 20
+
+    for i, coluna in enumerate(colunas):
 
         coluna = sorted(coluna, key=lambda b: b[1])
 
@@ -148,11 +163,11 @@ def agrupar_linhas(bolhas):
             key=lambda l: np.mean([b[1] for b in l])
         )
 
-        log(f"Coluna {idx+1}: {len(linhas)} linhas")
+        log(f"Bloco de Coluna {i+1}: {len(linhas)} questões detectadas")
 
         todas_linhas.extend(linhas)
 
-    log(f"Total linhas: {len(todas_linhas)}")
+    log(f"Total de questões (linhas) prontas para ler: {len(todas_linhas)}")
 
     return todas_linhas
 
