@@ -79,16 +79,37 @@ def agrupar_linhas(bolhas):
     xs_np = np.array(xs).reshape(-1, 1)
 
     from sklearn.cluster import KMeans
-    kmeans = KMeans(n_clusters=3, random_state=0).fit(xs_np)
+
+    # 🔥 DETECTA AUTOMATICAMENTE QUANTAS COLUNAS EXISTEM
+    xs_sorted = sorted(xs)
+    distancias = np.diff(xs_sorted)
+
+    threshold = 80
+
+    num_colunas = 1
+
+    for d in distancias:
+        if d > threshold:
+            num_colunas += 1
+
+    log(f"Colunas detectadas: {num_colunas}")
+
+    # 🔥 CLUSTER
+    kmeans = KMeans(
+        n_clusters=num_colunas,
+        random_state=0,
+        n_init=10
+    ).fit(xs_np)
 
     labels = kmeans.labels_
 
-    colunas = {0: [], 1: [], 2: []}
+    # 🔥 cria dicionário automático
+    colunas = {i: [] for i in range(num_colunas)}
 
     for i, b in enumerate(bolhas):
         colunas[labels[i]].append(b)
 
-    # ordenar colunas
+    # 🔥 ordenar colunas pela posição X
     colunas_ordenadas = sorted(
         colunas.values(),
         key=lambda c: np.mean([b[0] for b in c])
@@ -96,15 +117,26 @@ def agrupar_linhas(bolhas):
 
     todas_linhas = []
 
+    # 🔥 tolerância maior
+    TOLERANCIA_LINHA = 35
+
     for i, col in enumerate(colunas_ordenadas):
+
         linhas = []
 
+        # 🔥 ordenar primeiro por Y
+        col = sorted(col, key=lambda b: b[1])
+
         for b in col:
+
             x, y, w, h = b
             placed = False
 
             for linha in linhas:
-                if abs(linha[0][1] - y) < 20:
+
+                media_y = np.mean([bb[1] for bb in linha])
+
+                if abs(media_y - y) < TOLERANCIA_LINHA:
                     linha.append(b)
                     placed = True
                     break
@@ -112,6 +144,7 @@ def agrupar_linhas(bolhas):
             if not placed:
                 linhas.append([b])
 
+        # 🔥 ordenar linhas verticalmente
         linhas = sorted(
             linhas,
             key=lambda l: np.mean([b[1] for b in l])
@@ -124,7 +157,6 @@ def agrupar_linhas(bolhas):
     log(f"Total de linhas finais: {len(todas_linhas)}")
 
     return todas_linhas
-
 
 # =========================
 # LER RESPOSTAS
