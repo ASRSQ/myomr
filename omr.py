@@ -73,70 +73,69 @@ def detectar_bolhas(thresh):
 # AGRUPAR LINHAS (FIX ENEM)
 # =========================
 def agrupar_linhas(bolhas):
-    log("Agrupando linhas (modo ENEM)...")
 
-    xs = [b[0] for b in bolhas]
-    xs_np = np.array(xs).reshape(-1, 1)
+    log("Agrupando linhas...")
 
-    from sklearn.cluster import KMeans
+    # ordenar por X
+    bolhas = sorted(bolhas, key=lambda b: b[0])
 
-    # 🔥 DETECTA AUTOMATICAMENTE QUANTAS COLUNAS EXISTEM
-    xs_sorted = sorted(xs)
-    distancias = np.diff(xs_sorted)
+    colunas = []
 
-    threshold = 80
+    TOLERANCIA_X = 80
 
-    num_colunas = 1
+    # =========================
+    # AGRUPAR COLUNAS
+    # =========================
+    for b in bolhas:
 
-    for d in distancias:
-        if d > threshold:
-            num_colunas += 1
+        x, y, w, h = b
 
-    log(f"Colunas detectadas: {num_colunas}")
+        placed = False
 
-    # 🔥 CLUSTER
-    kmeans = KMeans(
-        n_clusters=num_colunas,
-        random_state=0,
-        n_init=10
-    ).fit(xs_np)
+        for coluna in colunas:
 
-    labels = kmeans.labels_
+            media_x = np.mean([bb[0] for bb in coluna])
 
-    # 🔥 cria dicionário automático
-    colunas = {i: [] for i in range(num_colunas)}
+            if abs(media_x - x) < TOLERANCIA_X:
+                coluna.append(b)
+                placed = True
+                break
 
-    for i, b in enumerate(bolhas):
-        colunas[labels[i]].append(b)
+        if not placed:
+            colunas.append([b])
 
-    # 🔥 ordenar colunas pela posição X
-    colunas_ordenadas = sorted(
-        colunas.values(),
+    # ordenar colunas esquerda -> direita
+    colunas = sorted(
+        colunas,
         key=lambda c: np.mean([b[0] for b in c])
     )
 
+    log(f"Colunas detectadas: {len(colunas)}")
+
     todas_linhas = []
 
-    # 🔥 tolerância maior
-    TOLERANCIA_LINHA = 35
+    TOLERANCIA_Y = 25
 
-    for i, col in enumerate(colunas_ordenadas):
+    # =========================
+    # AGRUPAR LINHAS
+    # =========================
+    for idx, coluna in enumerate(colunas):
+
+        coluna = sorted(coluna, key=lambda b: b[1])
 
         linhas = []
 
-        # 🔥 ordenar primeiro por Y
-        col = sorted(col, key=lambda b: b[1])
-
-        for b in col:
+        for b in coluna:
 
             x, y, w, h = b
+
             placed = False
 
             for linha in linhas:
 
                 media_y = np.mean([bb[1] for bb in linha])
 
-                if abs(media_y - y) < TOLERANCIA_LINHA:
+                if abs(media_y - y) < TOLERANCIA_Y:
                     linha.append(b)
                     placed = True
                     break
@@ -144,17 +143,16 @@ def agrupar_linhas(bolhas):
             if not placed:
                 linhas.append([b])
 
-        # 🔥 ordenar linhas verticalmente
         linhas = sorted(
             linhas,
             key=lambda l: np.mean([b[1] for b in l])
         )
 
-        log(f"Coluna {i+1}: {len(linhas)} linhas")
+        log(f"Coluna {idx+1}: {len(linhas)} linhas")
 
         todas_linhas.extend(linhas)
 
-    log(f"Total de linhas finais: {len(todas_linhas)}")
+    log(f"Total linhas: {len(todas_linhas)}")
 
     return todas_linhas
 
