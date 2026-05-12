@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import os
 from pyzbar.pyzbar import decode
+from sklearn.cluster import DBSCAN
 
 DEBUG = True
 
@@ -179,226 +180,140 @@ def detectar_bolhas(thresh):
 # =========================
 def agrupar_linhas(bolhas):
 
-    """
-    Estratégia ROBUSTA baseada em GRID/TEMPLATE.
-
-    NÃO tenta descobrir colunas por clustering.
-    NÃO tenta descobrir questões por heurística frágil.
-
-    A lógica:
-    1. Detecta linhas físicas reais pelo eixo Y
-    2. Em cada linha:
-        - separa questões pelos gaps grandes no eixo X
-    3. Cada grupo de 4 bolhas = 1 questão
-    4. Reorganiza por colunas automaticamente
-
-    Funciona com:
-    - 1 coluna
-    - 2 colunas
-    - 4 colunas
-    - ENEM
-    - folhas padronizadas
-    """
-
     log("==== AGRUPANDO QUESTÕES ====")
 
     if not bolhas:
         return []
 
-    # =========================
-    # ORDENAR POR Y
-    # =========================
-    bolhas = sorted(bolhas, key=lambda b: b[1])
-
-    # =========================
-    # DETECTAR ALTURA MÉDIA
-    # =========================
-    alturas = [b[3] for b in bolhas]
-    altura_media = np.mean(alturas)
-
-    log(f"Altura média bolha: {altura_media:.2f}")
-
-    # =========================
-    # AGRUPAR LINHAS FÍSICAS
-    # =========================
-    TOLERANCIA_Y = altura_media * 1.2
-
-    linhas_fisicas = []
+    # -------------------------
+    # CENTROS
+    # -------------------------
+    dados = []
 
     for b in bolhas:
 
         x, y, w, h = b
 
-        colocado = False
+        cx = x + w / 2
+        cy = y + h / 2
 
-        for linha in linhas_fisicas:
+        dados.append([cx, cy])
 
-            media_y = np.mean([bb[1] for bb in linha])
+    dados = np.array(dados)
 
-            if abs(media_y - y) < TOLERANCIA_Y:
-                linha.append(b)
-                colocado = True
-                break
+    # -------------------------
+    # ALTURA MÉDIA
+    # -------------------------
+    altura_media = np.mean([b[3] for b in bolhas])
 
-        if not colocado:
-            linhas_fisicas.append([b])
+    log(f"Altura média bolha: {altura_media:.2f}")
 
-    # ordenar linhas
+    # -------------------------
+    # CLUSTER SOMENTE EM Y
+    # -------------------------
+    ys = dados[:, 1].reshape(-1, 1)
+
+    clustering = DBSCAN(
+        eps=altura_media * 0.9,
+        min_samples=4
+    ).fit(ys)
+
+    labels = clustering.labels_
+
+    # -------------------------
+    # AGRUPAR LINHAS
+    # -------------------------
+    linhas_temp = {}
+
+    for label, bolha in zip(labels, bolhas):
+
+        if label == -1:
+            continue
+
+        linhas_temp.setdefault(label, []).append(bolha)
+
+    linhas_fisicas = list(linhas_temp.values())
+
+    # ordenar verticalmente
     linhas_fisicas = sorted(
         linhas_fisicas,
-        key=lambda l: np.mean([b[1] for b in l])
+        key=lambda linha: np.mean([
+            b[1] for b in linha
+        ])
     )
 
     log(f"Linhas físicas detectadas: {len(linhas_fisicas)}")
 
-    # =========================
-    # SEPARAR QUESTÕES EM CADA LINHA
-    # =========================
+    # -------------------------
+    # EXTRAIR QUESTÕES
+    # -------------------------
     todas_questoes = []
 
-    for idx_linha, linha in enumerate(linhas_fisicas):
+    for idx, linha in enumerate(linhas_fisicas):
 
         linha = sorted(linha, key=lambda b: b[0])
 
-        # -------------------------
-        # calcular gaps
-        # -------------------------
-        gaps = []
+        xs = [b[0] for b in linha]
 
-        for i in range(1, len(linha)):
+        gaps = np.diff(xs)
 
-            anterior = linha[i - 1]
-            atual = linha[i]
+        if len(gaps) == 0:
+            continue
 
-            dist = atual[0] - anterior[0]
-
-            gaps.append(dist)
-
-        # gap típico entre alternativas
         gap_medio = np.median(gaps)
 
-        # gap de separação entre colunas
-        LIMIAR_COLUNA = gap_medio * 2.2
+        LIMIAR = gap_medio * 2.2
 
-        grupos = []
+        grupo = [linha[0]]
 
-        grupo_atual = [linha[0]]
+        questoes_linha = 0
 
         for i in range(1, len(linha)):
 
-            anterior = linha[i - 1]
-            atual = linha[i]
+            dist = linha[i][0] - linha[i - 1][0]
 
-            dist_x = atual[0] - anterior[0]
+            if dist > LIMIAR:
 
-            # NOVA QUESTÃO
-            if dist_x > LIMIAR_COLUNA:
+                if len(grupo) >= 4:
+                    todas_questoes.append(
+                        sorted(grupo[:4], key=lambda b: b[0])
+                    )
+                    questoes_linha += 1
 
-                grupos.append(grupo_atual)
-                grupo_atual = [atual]
+                grupo = [linha[i]]
 
             else:
-                grupo_atual.append(atual)
+                grupo.append(linha[i])
 
-        grupos.append(grupo_atual)
-
-        # -------------------------
-        # validar grupos
-        # -------------------------
-        questoes_validas = 0
-
-        for g in grupos:
-
-            g = sorted(g, key=lambda b: b[0])
-
-            if len(g) >= 4:
-
-                todas_questoes.append(g[:4])
-                questoes_validas += 1
-
-        log(
-            f"Linha física {idx_linha+1}: "
-            f"{questoes_validas} questões"
-        )
-
-    # =========================
-    # REORGANIZAR POR COLUNAS
-    # =========================
-    if not todas_questoes:
-        return []
-
-    # centro X de cada questão
-    xs = [
-        np.mean([b[0] for b in q])
-        for q in todas_questoes
-    ]
-
-    xs_sorted = sorted(xs)
-
-    # detectar gaps grandes entre colunas
-    dist_xs = np.diff(xs_sorted)
-
-    gap_medio_x = np.median(dist_xs)
-
-    LIMIAR_GRANDE_COLUNA = gap_medio_x * 2
-
-    cortes = []
-
-    for i, d in enumerate(dist_xs):
-
-        if d > LIMIAR_GRANDE_COLUNA:
-            cortes.append(
-                (xs_sorted[i] + xs_sorted[i+1]) / 2
+        # último grupo
+        if len(grupo) >= 4:
+            todas_questoes.append(
+                sorted(grupo[:4], key=lambda b: b[0])
             )
-
-    limites = [0]
-
-    for c in cortes:
-        limites.append(c)
-
-    limites.append(999999)
-
-    num_colunas = len(limites) - 1
-
-    log(f"Colunas detectadas: {num_colunas}")
-
-    colunas = [[] for _ in range(num_colunas)]
-
-    for q in todas_questoes:
-
-        xq = np.mean([b[0] for b in q])
-
-        for i in range(num_colunas):
-
-            if limites[i] <= xq < limites[i+1]:
-                colunas[i].append(q)
-                break
-
-    # =========================
-    # ORDENAR QUESTÕES
-    # =========================
-    linhas_finais = []
-
-    for idx_coluna, coluna in enumerate(colunas):
-
-        coluna = sorted(
-            coluna,
-            key=lambda q: np.mean([b[1] for b in q])
-        )
-
-        linhas_finais.extend(coluna)
+            questoes_linha += 1
 
         log(
-            f"Coluna {idx_coluna+1}: "
-            f"{len(coluna)} questões"
+            f"Linha física {idx+1}: "
+            f"{questoes_linha} questões"
         )
+
+    # -------------------------
+    # ORDENAÇÃO FINAL
+    # -------------------------
+    todas_questoes = sorted(
+        todas_questoes,
+        key=lambda q: (
+            np.mean([b[0] for b in q]),
+            np.mean([b[1] for b in q])
+        )
+    )
 
     log(
         f"==== TOTAL QUESTÕES: "
-        f"{len(linhas_finais)} ===="
+        f"{len(todas_questoes)} ===="
     )
 
-    return linhas_finais
+    return todas_questoes
 
 # =========================
 # SCORE E ESCOLHA
