@@ -464,43 +464,43 @@ def processar_gabarito(image_bytes, qtd_questoes, qtd_alternativas):
     # -------------------------
 # 5. LINHAS
 # -------------------------
-linhas = agrupar_linhas(bolhas)
+    linhas = agrupar_linhas(bolhas)
 
-debug_linhas = gabarito.copy()
+    debug_linhas = gabarito.copy()
 
-for i, linha in enumerate(linhas):
+    for i, linha in enumerate(linhas):
 
-    cor = (
-        int((i * 70) % 255),
-        int((i * 130) % 255),
-        int((i * 200) % 255)
-    )
-
-    for j, (x, y, w, h) in enumerate(linha):
-
-        # caixa
-        cv2.rectangle(
-            debug_linhas,
-            (x, y),
-            (x+w, y+h),
-            cor,
-            2
+        cor = (
+            int((i * 70) % 255),
+            int((i * 130) % 255),
+            int((i * 200) % 255)
         )
 
-        # alternativa
-        letra = chr(65 + j)
+        for j, (x, y, w, h) in enumerate(linha):
 
-        cv2.putText(
-            debug_linhas,
-            f"{i+1}{letra}",
-            (x, y - 5),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.45,
-            cor,
-            1
-        )
+            # caixa
+            cv2.rectangle(
+                debug_linhas,
+                (x, y),
+                (x+w, y+h),
+                cor,
+                2
+            )
 
-salvar("06_linhas", debug_linhas)
+            # alternativa
+            letra = chr(65 + j)
+
+            cv2.putText(
+                debug_linhas,
+                f"{i+1}{letra}",
+                (x, y - 5),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.45,
+                cor,
+                1
+            )
+
+    salvar("06_linhas", debug_linhas)
 
     # -------------------------
     # 6. RESPOSTAS
