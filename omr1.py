@@ -510,15 +510,76 @@ def processar_gabarito(image_bytes, qtd_questoes, qtd_alternativas):
     # -------------------------
     # 7. FINAL
     # -------------------------
+ # -------------------------
+# 7. FINAL
+# -------------------------
     final = gabarito.copy()
 
-    for q, r in respostas.items():
-        # Desenhando o texto da resposta na imagem final
-        cv2.putText(final, f"{q}:{r}",
-                    (20, 30 + q * 20),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5, (0, 255, 0), 1)
+    for q, questao in enumerate(questoes):
 
+        resposta = respostas.get(q + 1)
+
+        # cor da questão
+        cor = (
+            int((q * 70) % 255),
+            int((q * 130) % 255),
+            int((q * 200) % 255)
+        )
+
+        for i, (x, y, w, h) in enumerate(questao):
+
+            letra = chr(65 + i)
+
+            marcada = (
+                resposta == letra
+            )
+
+            # caixa
+            cv2.rectangle(
+                final,
+                (x, y),
+                (x + w, y + h),
+                cor,
+                2
+            )
+
+            # destaque da marcada
+            if marcada:
+
+                cv2.circle(
+                    final,
+                    (
+                        int(x + w / 2),
+                        int(y + h / 2)
+                    ),
+                    int(w / 2),
+                    (0, 255, 0),
+                    3
+                )
+
+                cv2.putText(
+                    final,
+                    f"{q+1}:{resposta}",
+                    (x, y - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2
+                )
+
+            # alternativa
+            cv2.putText(
+                final,
+                letra,
+                (x + 5, y + 20),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (255, 0, 0),
+                1
+            )
+
+    # salvar final
+    salvar("07_final", final)
     salvar("07_final", final)
 
     log("==== FINALIZADO ====")
