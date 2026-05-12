@@ -3,6 +3,7 @@ import numpy as np
 import os
 from pyzbar.pyzbar import decode
 from sklearn.cluster import DBSCAN
+import time
 
 DEBUG = True
 
@@ -18,29 +19,59 @@ def log(msg):
 # =========================
 # SALVAR (OPCIONAL)
 # =========================
+
 def salvar(nome, img):
+
     if not DEBUG:
         return
 
     try:
-        base = os.path.dirname(os.path.abspath(__file__))
-        pasta = os.path.join(base, "debug")
-        os.makedirs(pasta, exist_ok=True)
 
-        caminho = os.path.join(pasta, f"{nome}.jpg")
+        base = os.path.dirname(
+            os.path.abspath(__file__)
+        )
+
+        pasta = os.path.join(
+            base,
+            "debug"
+        )
+
+        os.makedirs(
+            pasta,
+            exist_ok=True
+        )
+
+        timestamp = int(time.time())
+
+        caminho = os.path.join(
+            pasta,
+            f"{timestamp}_{nome}.jpg"
+        )
 
         if img is None:
+
             log(f"ERRO: {nome} é None")
             return
 
-        ok = cv2.imwrite(caminho, img)
+        ok = cv2.imwrite(
+            caminho,
+            img
+        )
 
         if ok:
-            log(f"Imagem salva: {nome}")
+
+            log(
+                f"Imagem salva: {caminho}"
+            )
+
         else:
-            log(f"ERRO ao salvar imagem: {nome}")
+
+            log(
+                f"ERRO ao salvar imagem: {nome}"
+            )
 
     except Exception as e:
+
         log(f"EXCEPTION salvar: {e}")
 
 
