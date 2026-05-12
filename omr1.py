@@ -227,109 +227,77 @@ def agrupar_linhas(bolhas):
         return []
 
     # =========================
-    # CENTROS X
+    # ORDENAR POR X
     # =========================
-    centros = []
+    bolhas = sorted(
+        bolhas,
+        key=lambda b: b[0]
+    )
 
-    for b in bolhas:
+    # =========================
+    # DIVIDIR EM 4 COLUNAS FIXAS
+    # =========================
+    total = len(bolhas)
 
-        x, y, w, h = b
+    if total % 4 != 0:
+        log("ERRO: quantidade inválida")
+        return []
 
-        cx = x + w / 2
-        cy = y + h / 2
+    # 208 / 4 = 52
+    questoes_total = total // 4
 
-        centros.append((cx, cy, b))
+    # 52 / 4 colunas = 13
+    questoes_por_coluna = questoes_total // 4
 
-    # ordenar por X
-    centros = sorted(centros, key=lambda v: v[0])
-
-    xs = [c[0] for c in centros]
-
-    gaps = np.diff(xs)
-
-    gap_medio = np.median(gaps)
-
-    # gap grande entre colunas
-    LIMIAR_COLUNA = gap_medio * 10
+    # cada questão possui 4 bolhas
+    bolhas_por_coluna = questoes_por_coluna * 4
 
     colunas = []
 
-    coluna_atual = [centros[0]]
+    for i in range(4):
 
-    for i in range(1, len(centros)):
+        inicio = i * bolhas_por_coluna
+        fim = inicio + bolhas_por_coluna
 
-        anterior = centros[i - 1]
-        atual = centros[i]
+        coluna = bolhas[inicio:fim]
 
-        dist = atual[0] - anterior[0]
-
-        if dist > LIMIAR_COLUNA:
-
-            colunas.append(coluna_atual)
-            coluna_atual = [atual]
-
-        else:
-            coluna_atual.append(atual)
-
-    colunas.append(coluna_atual)
+        colunas.append(coluna)
 
     log(f"Colunas detectadas: {len(colunas)}")
 
     # =========================
-    # QUESTÕES
+    # PROCESSAR QUESTÕES
     # =========================
     todas_questoes = []
 
     for idx_coluna, coluna in enumerate(colunas):
 
         # ordenar verticalmente
-        coluna = sorted(coluna, key=lambda v: v[1])
-
-        bolhas_coluna = [v[2] for v in coluna]
-
-        altura_media = np.mean([
-            b[3]
-            for b in bolhas_coluna
-        ])
-
-        tolerancia_y = altura_media * 1.2
-
-        linhas = []
-
-        for b in bolhas_coluna:
-
-            x, y, w, h = b
-
-            colocado = False
-
-            for linha in linhas:
-
-                media_y = np.mean([
-                    bb[1]
-                    for bb in linha
-                ])
-
-                if abs(media_y - y) < tolerancia_y:
-
-                    linha.append(b)
-                    colocado = True
-                    break
-
-            if not colocado:
-                linhas.append([b])
+        coluna = sorted(
+            coluna,
+            key=lambda b: b[1]
+        )
 
         log(
             f"Coluna {idx_coluna+1}: "
-            f"{len(linhas)} linhas"
+            f"{len(coluna)} bolhas"
         )
 
-        # cada linha = 1 questão
-        for linha in linhas:
+        # dividir em grupos de 4
+        for i in range(0, len(coluna), 4):
 
-            linha = sorted(linha, key=lambda b: b[0])
+            grupo = coluna[i:i+4]
 
-            if len(linha) == 4:
-                todas_questoes.append(linha)
+            if len(grupo) != 4:
+                continue
+
+            # ordenar alternativas
+            grupo = sorted(
+                grupo,
+                key=lambda b: b[0]
+            )
+
+            todas_questoes.append(grupo)
 
     log(
         f"==== TOTAL QUESTÕES: "
