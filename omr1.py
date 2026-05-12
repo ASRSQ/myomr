@@ -493,6 +493,11 @@ def processar_gabarito(image_bytes, qtd_questoes, qtd_alternativas):
     # -------------------------
 # 5. LINHAS
 # -------------------------
+# -------------------------
+# DEBUG CONFIG
+# -------------------------
+    log(f"Qtd questões recebida: {qtd_questoes}")
+    log(f"Qtd alternativas recebida: {qtd_alternativas}")
     linhas = agrupar_linhas(bolhas,qtd_alternativas)
 
     debug_linhas = gabarito.copy()
