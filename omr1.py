@@ -227,85 +227,119 @@ def agrupar_linhas(bolhas):
         return []
 
     # =========================
-    # ORDENAR POR X
+    # CENTROS
     # =========================
-    bolhas = sorted(
-        bolhas,
-        key=lambda b: b[0]
+    itens = []
+
+    for b in bolhas:
+
+        x, y, w, h = b
+
+        cx = x + w / 2
+        cy = y + h / 2
+
+        itens.append({
+            "bolha": b,
+            "cx": cx,
+            "cy": cy
+        })
+
+    # =========================
+    # ORDENAR POR Y E X
+    # =========================
+    itens = sorted(
+        itens,
+        key=lambda i: (
+            round(i["cy"] / 10),
+            i["cx"]
+        )
     )
 
     # =========================
-    # DIVIDIR EM 4 COLUNAS FIXAS
+    # GAP HORIZONTAL
     # =========================
-    total = len(bolhas)
+    larguras = [
+        b[2]
+        for b in bolhas
+    ]
 
-    if total % 4 != 0:
-        log("ERRO: quantidade inválida")
-        return []
+    largura_media = np.mean(larguras)
 
-    # 208 / 4 = 52
-    questoes_total = total // 4
+    GAP_MAX = largura_media * 2.5
 
-    # 52 / 4 colunas = 13
-    questoes_por_coluna = questoes_total // 4
+    usados = set()
 
-    # cada questão possui 4 bolhas
-    bolhas_por_coluna = questoes_por_coluna * 4
-
-    colunas = []
-
-    for i in range(4):
-
-        inicio = i * bolhas_por_coluna
-        fim = inicio + bolhas_por_coluna
-
-        coluna = bolhas[inicio:fim]
-
-        colunas.append(coluna)
-
-    log(f"Colunas detectadas: {len(colunas)}")
+    questoes = []
 
     # =========================
-    # PROCESSAR QUESTÕES
+    # AGRUPAR QUESTÕES
     # =========================
-    todas_questoes = []
+    for i, item in enumerate(itens):
 
-    for idx_coluna, coluna in enumerate(colunas):
+        if i in usados:
+            continue
 
-        # ordenar verticalmente
-        coluna = sorted(
-            coluna,
-            key=lambda b: b[1]
-        )
+        grupo = [item]
+        usados.add(i)
 
-        log(
-            f"Coluna {idx_coluna+1}: "
-            f"{len(coluna)} bolhas"
-        )
+        x_base = item["cx"]
+        y_base = item["cy"]
 
-        # dividir em grupos de 4
-        for i in range(0, len(coluna), 4):
+        candidatos = []
 
-            grupo = coluna[i:i+4]
+        for j, outro in enumerate(itens):
 
-            if len(grupo) != 4:
+            if j in usados:
                 continue
 
-            # ordenar alternativas
+            dx = abs(outro["cx"] - x_base)
+            dy = abs(outro["cy"] - y_base)
+
+            # mesma linha física
+            if dy < largura_media:
+
+                candidatos.append((dx, j, outro))
+
+        candidatos = sorted(candidatos, key=lambda t: t[0])
+
+        for _, j, outro in candidatos:
+
+            if len(grupo) >= 4:
+                break
+
+            grupo.append(outro)
+            usados.add(j)
+
+        # validar questão
+        if len(grupo) == 4:
+
             grupo = sorted(
                 grupo,
-                key=lambda b: b[0]
+                key=lambda g: g["cx"]
             )
 
-            todas_questoes.append(grupo)
+            questoes.append([
+                g["bolha"]
+                for g in grupo
+            ])
+
+    # =========================
+    # ORDENAÇÃO FINAL
+    # =========================
+    questoes = sorted(
+        questoes,
+        key=lambda q: (
+            np.mean([b[0] for b in q]),
+            np.mean([b[1] for b in q])
+        )
+    )
 
     log(
         f"==== TOTAL QUESTÕES: "
-        f"{len(todas_questoes)} ===="
+        f"{len(questoes)} ===="
     )
 
-    return todas_questoes
-
+    return questoes
 # =========================
 # SCORE E ESCOLHA
 # =========================
@@ -428,17 +462,45 @@ def processar_gabarito(image_bytes, qtd_questoes, qtd_alternativas):
         raise Exception("Falha na detecção das bolhas")
 
     # -------------------------
-    # 5. LINHAS
-    # -------------------------
-    linhas = agrupar_linhas(bolhas)
-    debug_linhas = gabarito.copy()
+# 5. LINHAS
+# -------------------------
+linhas = agrupar_linhas(bolhas)
 
-    for i, linha in enumerate(linhas):
-        for (x, y, w, h) in linha:
-            cv2.putText(debug_linhas, str(i+1), (x, y),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
+debug_linhas = gabarito.copy()
 
-    salvar("06_linhas", debug_linhas)
+for i, linha in enumerate(linhas):
+
+    cor = (
+        int((i * 70) % 255),
+        int((i * 130) % 255),
+        int((i * 200) % 255)
+    )
+
+    for j, (x, y, w, h) in enumerate(linha):
+
+        # caixa
+        cv2.rectangle(
+            debug_linhas,
+            (x, y),
+            (x+w, y+h),
+            cor,
+            2
+        )
+
+        # alternativa
+        letra = chr(65 + j)
+
+        cv2.putText(
+            debug_linhas,
+            f"{i+1}{letra}",
+            (x, y - 5),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.45,
+            cor,
+            1
+        )
+
+salvar("06_linhas", debug_linhas)
 
     # -------------------------
     # 6. RESPOSTAS
