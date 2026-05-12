@@ -185,121 +185,114 @@ def agrupar_linhas(bolhas):
         return []
 
     # =========================
-    # 1. AGRUPAR POR Y
+    # ORDENAR POR X
     # =========================
-    bolhas = sorted(bolhas, key=lambda b: b[1])
+    bolhas = sorted(bolhas, key=lambda b: b[0])
 
-    linhas_temp = []
+    xs = [b[0] for b in bolhas]
 
-    TOLERANCIA_Y = 15
+    x_min = min(xs)
+    x_max = max(xs)
+
+    largura_total = x_max - x_min
+
+    # =========================
+    # DETECTAR QUANTAS COLUNAS
+    # =========================
+    # 1 coluna -> sem gaps
+    # 4 colunas -> gaps grandes
+    # =========================
+
+    xs_sorted = sorted(xs)
+    distancias = np.diff(xs_sorted)
+
+    gaps = []
+
+    for i, d in enumerate(distancias):
+
+        if d > 80:
+            gaps.append((xs_sorted[i] + xs_sorted[i+1]) / 2)
+
+    # máximo 4 colunas
+    gaps = gaps[:3]
+
+    limites = [0]
+
+    for g in gaps:
+        limites.append(g)
+
+    limites.append(99999)
+
+    num_colunas = len(limites) - 1
+
+    log(f"Colunas detectadas: {num_colunas}")
+
+    # =========================
+    # DISTRIBUIR BOLHAS
+    # =========================
+    colunas = [[] for _ in range(num_colunas)]
 
     for b in bolhas:
 
         x, y, w, h = b
 
-        colocado = False
+        for i in range(num_colunas):
 
-        for linha in linhas_temp:
-
-            media_y = np.mean([bb[1] for bb in linha])
-
-            if abs(media_y - y) < TOLERANCIA_Y:
-                linha.append(b)
-                colocado = True
+            if limites[i] <= x < limites[i + 1]:
+                colunas[i].append(b)
                 break
 
-        if not colocado:
-            linhas_temp.append([b])
-
     # =========================
-    # 2. QUEBRAR LINHAS GRANDES
-    # =========================
-    questoes = []
-
-    for linha in linhas_temp:
-
-        linha = sorted(linha, key=lambda b: b[0])
-
-        grupo = [linha[0]]
-
-        for i in range(1, len(linha)):
-
-            anterior = linha[i - 1]
-            atual = linha[i]
-
-            dist_x = atual[0] - anterior[0]
-
-            # distância entre alternativas da mesma questão
-            if dist_x < 60:
-                grupo.append(atual)
-
-            else:
-
-                # fechou uma questão
-                if len(grupo) >= 4:
-                    questoes.append(grupo[:4])
-
-                grupo = [atual]
-
-        # último grupo
-        if len(grupo) >= 4:
-            questoes.append(grupo[:4])
-
-    # =========================
-    # 3. AGRUPAR EM GRANDES COLUNAS
-    # =========================
-    colunas = []
-
-    TOLERANCIA_X = 120
-
-    for q in questoes:
-
-        # usa apenas o X da primeira bolha (A)
-        x_questao = q[0][0]
-
-        colocado = False
-
-        for coluna in colunas:
-
-            media_coluna = np.mean([
-                qq[0][0]
-                for qq in coluna
-            ])
-
-            if abs(media_coluna - x_questao) < TOLERANCIA_X:
-                coluna.append(q)
-                colocado = True
-                break
-
-        if not colocado:
-            colunas.append([q])
-
-    # =========================
-    # 4. ORDENAR COLUNAS
-    # =========================
-    colunas = sorted(
-        colunas,
-        key=lambda c: np.mean([
-            q[0][0]
-            for q in c
-        ])
-    )
-
-    # =========================
-    # 5. ORDENAR QUESTÕES
+    # PROCESSAR CADA COLUNA
     # =========================
     linhas_finais = []
 
+    TOLERANCIA_Y = 15
+
     for idx, coluna in enumerate(colunas):
 
-        coluna = sorted(
-            coluna,
-            key=lambda q: np.mean([b[1] for b in q])
+        coluna = sorted(coluna, key=lambda b: b[1])
+
+        linhas = []
+
+        for b in coluna:
+
+            x, y, w, h = b
+
+            colocado = False
+
+            for linha in linhas:
+
+                media_y = np.mean([bb[1] for bb in linha])
+
+                if abs(media_y - y) < TOLERANCIA_Y:
+                    linha.append(b)
+                    colocado = True
+                    break
+
+            if not colocado:
+                linhas.append([b])
+
+        # =========================
+        # LIMPAR E ORDENAR
+        # =========================
+        linhas_validas = []
+
+        for linha in linhas:
+
+            linha = sorted(linha, key=lambda b: b[0])
+
+            if len(linha) >= 4:
+                linhas_validas.append(linha[:4])
+
+        linhas_validas = sorted(
+            linhas_validas,
+            key=lambda l: np.mean([b[1] for b in l])
         )
 
-        linhas_finais.extend(coluna)
+        linhas_finais.extend(linhas_validas)
 
-        log(f"Coluna {idx+1}: {len(coluna)} questões")
+        log(f"Coluna {idx+1}: {len(linhas_validas)} questões")
 
     # =========================
     # FINAL
