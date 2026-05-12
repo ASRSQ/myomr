@@ -219,7 +219,13 @@ def detectar_bolhas(thresh):
 # =========================
 # LINHAS (UNIVERSAL)
 # =========================
-def agrupar_linhas(bolhas):
+# =========================
+# LINHAS / QUESTÕES (UNIVERSAL)
+# =========================
+def agrupar_linhas(
+    bolhas,
+    qtd_alternativas
+):
 
     log("==== AGRUPANDO QUESTÕES ====")
 
@@ -256,16 +262,21 @@ def agrupar_linhas(bolhas):
     )
 
     # =========================
-    # GAP HORIZONTAL
+    # MEDIDAS MÉDIAS
     # =========================
     larguras = [
         b[2]
         for b in bolhas
     ]
 
+    altura_media = np.mean([
+        b[3]
+        for b in bolhas
+    ])
+
     largura_media = np.mean(larguras)
 
-    GAP_MAX = largura_media * 2.5
+    tolerancia_y = altura_media * 1.2
 
     usados = set()
 
@@ -292,26 +303,38 @@ def agrupar_linhas(bolhas):
             if j in usados:
                 continue
 
-            dx = abs(outro["cx"] - x_base)
-            dy = abs(outro["cy"] - y_base)
+            dx = abs(
+                outro["cx"] - x_base
+            )
+
+            dy = abs(
+                outro["cy"] - y_base
+            )
 
             # mesma linha física
-            if dy < largura_media:
+            if dy < tolerancia_y:
 
-                candidatos.append((dx, j, outro))
+                candidatos.append(
+                    (dx, j, outro)
+                )
 
-        candidatos = sorted(candidatos, key=lambda t: t[0])
+        # ordenar pela distância horizontal
+        candidatos = sorted(
+            candidatos,
+            key=lambda t: t[0]
+        )
 
+        # pegar alternativas vizinhas
         for _, j, outro in candidatos:
 
-            if len(grupo) >= 4:
+            if len(grupo) >= qtd_alternativas:
                 break
 
             grupo.append(outro)
             usados.add(j)
 
         # validar questão
-        if len(grupo) == 4:
+        if len(grupo) == qtd_alternativas:
 
             grupo = sorted(
                 grupo,
@@ -329,8 +352,14 @@ def agrupar_linhas(bolhas):
     questoes = sorted(
         questoes,
         key=lambda q: (
-            np.mean([b[0] for b in q]),
-            np.mean([b[1] for b in q])
+            np.mean([
+                b[0]
+                for b in q
+            ]),
+            np.mean([
+                b[1]
+                for b in q
+            ])
         )
     )
 
@@ -464,7 +493,7 @@ def processar_gabarito(image_bytes, qtd_questoes, qtd_alternativas):
     # -------------------------
 # 5. LINHAS
 # -------------------------
-    linhas = agrupar_linhas(bolhas)
+    linhas = agrupar_linhas(bolhas,qtd_alternativas)
 
     debug_linhas = gabarito.copy()
 
