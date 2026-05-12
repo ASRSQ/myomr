@@ -156,22 +156,63 @@ def recortar_gabarito(img):
 # BOLHAS
 # =========================
 def detectar_bolhas(thresh):
+
     log("Detectando bolhas...")
 
-    # RETR_EXTERNAL garante que as letras de dentro não sejam lidas como novos contornos
-    cnts, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts, _ = cv2.findContours(
+        thresh,
+        cv2.RETR_EXTERNAL,
+        cv2.CHAIN_APPROX_SIMPLE
+    )
+
     log(f"Contornos totais: {len(cnts)}")
 
     bolhas = []
 
     for c in cnts:
+
+        area = cv2.contourArea(c)
+
+        if area < 300 or area > 2500:
+            continue
+
         x, y, w, h = cv2.boundingRect(c)
+
         ratio = w / float(h)
 
-        if 15 < w < 60 and 0.7 < ratio < 1.3:
-            bolhas.append((x, y, w, h))
+        # bolha precisa ser quase quadrada
+        if not (0.8 <= ratio <= 1.2):
+            continue
+
+        # evitar números/textos
+        if w < 20 or h < 20:
+            continue
+
+        # circularidade
+        perimetro = cv2.arcLength(c, True)
+
+        if perimetro == 0:
+            continue
+
+        circularidade = (
+            4 * np.pi * area
+        ) / (perimetro * perimetro)
+
+        # círculo razoável
+        if circularidade < 0.5:
+            continue
+
+        # preenchimento do retângulo
+        ocupacao = area / float(w * h)
+
+        # números têm ocupação baixa
+        if ocupacao < 0.45:
+            continue
+
+        bolhas.append((x, y, w, h))
 
     log(f"Bolhas válidas detectadas: {len(bolhas)}")
+
     return bolhas
 
 
