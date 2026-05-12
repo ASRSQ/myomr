@@ -247,16 +247,7 @@ def detectar_bolhas(thresh):
     return bolhas
 
 
-# =========================
-# LINHAS (UNIVERSAL)
-# =========================
-# =========================
-# LINHAS / QUESTÕES (UNIVERSAL)
-# =========================
-def agrupar_linhas(
-    bolhas,
-    qtd_alternativas
-):
+def agrupar_linhas(bolhas, qtd_alternativas):
 
     log("==== AGRUPANDO QUESTÕES ====")
 
@@ -378,21 +369,57 @@ def agrupar_linhas(
             ])
 
     # =========================
-    # ORDENAÇÃO FINAL
+    # AGRUPAR COLUNAS REAIS
     # =========================
-    questoes = sorted(
-        questoes,
-        key=lambda q: (
-            np.mean([
-                b[0]
-                for b in q
-            ]),
-            np.mean([
+    centros_x = np.array([
+        [
+            np.mean([b[0] for b in q])
+        ]
+        for q in questoes
+    ])
+
+    # detectar colunas automaticamente
+    db = DBSCAN(
+        eps=80,
+        min_samples=1
+    ).fit(centros_x)
+
+    labels = db.labels_
+
+    questoes_colunas = {}
+
+    for label, questao in zip(labels, questoes):
+
+        if label not in questoes_colunas:
+            questoes_colunas[label] = []
+
+        questoes_colunas[label].append(questao)
+
+    # ordenar colunas esquerda -> direita
+    colunas_ordenadas = sorted(
+        questoes_colunas.items(),
+        key=lambda item: np.mean([
+            np.mean([b[0] for b in q])
+            for q in item[1]
+        ])
+    )
+
+    questoes_finais = []
+
+    # ordenar questões verticalmente
+    for _, coluna in colunas_ordenadas:
+
+        coluna = sorted(
+            coluna,
+            key=lambda q: np.mean([
                 b[1]
                 for b in q
             ])
         )
-    )
+
+        questoes_finais.extend(coluna)
+
+    questoes = questoes_finais
 
     log(
         f"==== TOTAL QUESTÕES: "
